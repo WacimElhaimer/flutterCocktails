@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/cocktail.dart';
+import '../models/ingredient.dart';
 
 class ApiService {
   static const String _baseUrl = 'https://www.thecocktaildb.com/api/json/v1/1';
@@ -56,7 +57,8 @@ class ApiService {
 
   /// Rechercher des cocktails par ingrédient
   Future<List<Cocktail>> searchCocktailsByIngredient(String ingredient) async {
-    final response = await http.get(Uri.parse('$_baseUrl/filter.php?i=$ingredient'));
+    final response =
+        await http.get(Uri.parse('$_baseUrl/filter.php?i=$ingredient'));
 
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
@@ -83,6 +85,55 @@ class ApiService {
       return null;
     } else {
       throw Exception('Failed to load random cocktail');
+    }
+  }
+
+  /// Obtenir les détails d'un ingrédient par ID
+  Future<Ingredient?> getIngredientById(String id) async {
+    final response =
+        await http.get(Uri.parse('$_baseUrl/lookup.php?iid=$id'));
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      if (data['ingredients'] != null && data['ingredients'].isNotEmpty) {
+        return Ingredient.fromJson(data['ingredients'][0]);
+      }
+      return null;
+    } else {
+      throw Exception('Failed to load ingredient details');
+    }
+  }
+
+  /// Rechercher un ingrédient par nom
+  Future<Ingredient?> searchIngredientByName(String name) async {
+    final response =
+        await http.get(Uri.parse('$_baseUrl/search.php?i=$name'));
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      if (data['ingredients'] != null && data['ingredients'].isNotEmpty) {
+        return Ingredient.fromJson(data['ingredients'][0]);
+      }
+      return null;
+    } else {
+      throw Exception('Failed to search ingredient by name');
+    }
+  }
+
+  /// Lister les catégories, verres, ingrédients ou types d'alcool
+  Future<List<String>> listFilterOptions(String filter) async {
+    final response = await http.get(Uri.parse('$_baseUrl/list.php?$filter=list'));
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      if (data['drinks'] != null) {
+        return (data['drinks'] as List)
+            .map((item) => item['str$filter'] as String)
+            .toList();
+      }
+      return [];
+    } else {
+      throw Exception('Failed to load filter options');
     }
   }
 }
