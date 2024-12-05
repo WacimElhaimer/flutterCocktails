@@ -31,9 +31,11 @@ class _CocktailListScreenState extends State<CocktailListScreen> {
   }
 
   void _onScroll() {
+    final provider = Provider.of<CocktailProvider>(context, listen: false);
+
     if (_scrollController.position.pixels ==
-        _scrollController.position.maxScrollExtent) {
-      // Charger la lettre suivante
+            _scrollController.position.maxScrollExtent &&
+        !provider.isLoading) {
       final nextLetter = String.fromCharCode(_currentLetter.codeUnitAt(0) + 1);
       if (nextLetter.codeUnitAt(0) <= 'Z'.codeUnitAt(0)) {
         setState(() {
@@ -76,46 +78,51 @@ class _CocktailListScreenState extends State<CocktailListScreen> {
           ),
           // Liste des cocktails avec sections
           Expanded(
-            child: provider.isLoading
-                ? Center(child: CircularProgressIndicator())
-                : provider.sectionedCocktails.isEmpty
-                    ? Center(child: Text('No cocktails found'))
-                    : ListView.builder(
-                        controller: _scrollController,
-                        itemCount: provider.sectionedCocktails.length,
-                        itemBuilder: (context, index) {
-                          final section = provider.sectionedCocktails[index];
-                          return Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // En-tête de section (lettre)
-                              Padding(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 16.0, vertical: 8.0),
-                                child: Text(
-                                  section['letter'],
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                              // Liste des cocktails dans la section
-                              ...section['cocktails']
-                                  .map<Widget>((cocktail) => CocktailCard(
-                                        cocktail: cocktail,
-                                        onTap: () {
-                                          provider.getCocktailDetails(
-                                              cocktail.idDrink);
-                                          Navigator.pushNamed(
-                                              context, '/details');
-                                        },
-                                      ))
-                                  .toList(),
-                            ],
-                          );
-                        },
+            child: ListView.builder(
+              controller: _scrollController,
+              itemCount: provider.sectionedCocktails.length + 1,
+              itemBuilder: (context, index) {
+                if (index == provider.sectionedCocktails.length) {
+                  return provider.isLoading
+                      ? Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: CircularProgressIndicator(),
+                          ),
+                        )
+                      : SizedBox.shrink(); // Rien à afficher
+                }
+
+                final section = provider.sectionedCocktails[index];
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // En-tête de section (lettre)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16.0, vertical: 8.0),
+                      child: Text(
+                        section['letter'],
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
+                    ),
+                    // Liste des cocktails dans la section
+                    ...section['cocktails']
+                        .map<Widget>((cocktail) => CocktailCard(
+                              cocktail: cocktail,
+                              onTap: () {
+                                provider.getCocktailDetails(cocktail.idDrink);
+                                Navigator.pushNamed(context, '/details');
+                              },
+                            ))
+                        .toList(),
+                  ],
+                );
+              },
+            ),
           ),
         ],
       ),
