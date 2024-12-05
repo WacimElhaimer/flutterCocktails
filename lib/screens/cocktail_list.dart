@@ -1,9 +1,49 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/cocktail_provider.dart';
-import 'cocktail_detail.dart';
+import '../widgets/cocktail_card.dart';
 
-class CocktailListScreen extends StatelessWidget {
+class CocktailListScreen extends StatefulWidget {
+  @override
+  _CocktailListScreenState createState() => _CocktailListScreenState();
+}
+
+class _CocktailListScreenState extends State<CocktailListScreen> {
+  final ScrollController _scrollController = ScrollController();
+  String _currentLetter = 'A'; // Commence par la lettre A
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchCocktails(); // Charger la première lettre
+    _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _fetchCocktails() {
+    final provider = Provider.of<CocktailProvider>(context, listen: false);
+    provider.fetchCocktailsByLetter(_currentLetter);
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels ==
+        _scrollController.position.maxScrollExtent) {
+      // Charger la lettre suivante
+      final nextLetter = String.fromCharCode(_currentLetter.codeUnitAt(0) + 1);
+      if (nextLetter.codeUnitAt(0) <= 'Z'.codeUnitAt(0)) {
+        setState(() {
+          _currentLetter = nextLetter;
+        });
+        _fetchCocktails();
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<CocktailProvider>(context);
@@ -20,6 +60,7 @@ class CocktailListScreen extends StatelessWidget {
       ),
       body: Column(
         children: [
+          // SearchBar
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: TextField(
@@ -33,37 +74,45 @@ class CocktailListScreen extends StatelessWidget {
               },
             ),
           ),
+          // Liste des cocktails avec sections
           Expanded(
             child: provider.isLoading
                 ? Center(child: CircularProgressIndicator())
-                : provider.errorMessage.isNotEmpty
-                    ? Center(child: Text(provider.errorMessage))
+                : provider.sectionedCocktails.isEmpty
+                    ? Center(child: Text('No cocktails found'))
                     : ListView.builder(
-                        itemCount: provider.cocktails.length,
+                        controller: _scrollController,
+                        itemCount: provider.sectionedCocktails.length,
                         itemBuilder: (context, index) {
-                          final cocktail = provider.cocktails[index];
-                          return ListTile(
-                            leading: cocktail.strDrinkThumb != null
-                                ? CircleAvatar(
-                                    backgroundImage: NetworkImage(
-                                      cocktail.strDrinkThumb!,
-                                    ),
-                                  )
-                                : CircleAvatar(
-                                    child: Icon(Icons.local_drink),
+                          final section = provider.sectionedCocktails[index];
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // En-tête de section (lettre)
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 16.0, vertical: 8.0),
+                                child: Text(
+                                  section['letter'],
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
                                   ),
-                            title: Text(cocktail.strDrink),
-                            subtitle: Text(cocktail.strCategory ?? ''),
-                            onTap: () {
-                              provider.getCocktailDetails(cocktail.idDrink);
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) =>
-                                      CocktailDetailScreen(),
                                 ),
-                              );
-                            },
+                              ),
+                              // Liste des cocktails dans la section
+                              ...section['cocktails']
+                                  .map<Widget>((cocktail) => CocktailCard(
+                                        cocktail: cocktail,
+                                        onTap: () {
+                                          provider.getCocktailDetails(
+                                              cocktail.idDrink);
+                                          Navigator.pushNamed(
+                                              context, '/details');
+                                        },
+                                      ))
+                                  .toList(),
+                            ],
                           );
                         },
                       ),

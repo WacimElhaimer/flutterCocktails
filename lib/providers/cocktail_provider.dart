@@ -11,6 +11,10 @@ class CocktailProvider with ChangeNotifier {
   bool _isLoading = false;
   String _errorMessage = '';
 
+  // Nouveau état pour les sections de cocktails
+  List<Map<String, dynamic>> _sectionedCocktails = [];
+  List<Map<String, dynamic>> get sectionedCocktails => _sectionedCocktails;
+
   // Getters
   List<Cocktail> get cocktails => _cocktails;
   List<Cocktail> get favorites => _favorites;
@@ -33,6 +37,30 @@ class CocktailProvider with ChangeNotifier {
       notifyListeners();
     }
   }
+
+/// Charger les cocktails par lettre et les organiser en sections
+Future<void> fetchCocktailsByLetter(String letter) async {
+  if (_isLoading) return;
+
+  try {
+    _isLoading = true;
+
+    final cocktails = await _apiService.listCocktailsByFirstLetter(letter);
+    if (cocktails.isNotEmpty) {
+      _sectionedCocktails.add({
+        'letter': letter,
+        'cocktails': cocktails,
+      });
+    }
+  } catch (e) {
+    _errorMessage = 'Failed to fetch cocktails for $letter: $e';
+  } finally {
+    Future.delayed(Duration.zero, () {
+      _isLoading = false;
+      notifyListeners();
+    });
+  }
+}
 
   /// Obtenir les détails d'un cocktail
   Future<void> getCocktailDetails(String id) async {
@@ -67,5 +95,11 @@ class CocktailProvider with ChangeNotifier {
   /// Vérifier si un cocktail est favori
   bool isFavorite(Cocktail cocktail) {
     return _favorites.contains(cocktail);
+  }
+
+  /// Réinitialiser les sections (utile pour une nouvelle recherche ou un rafraîchissement)
+  void resetSections() {
+    _sectionedCocktails = [];
+    notifyListeners();
   }
 }
