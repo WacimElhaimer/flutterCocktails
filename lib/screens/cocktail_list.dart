@@ -11,6 +11,7 @@ class CocktailListScreen extends StatefulWidget {
 class _CocktailListScreenState extends State<CocktailListScreen> {
   final ScrollController _scrollController = ScrollController();
   String _currentLetter = 'A'; // Commence par la lettre A
+  final List<String> _alphabet = List.generate(26, (i) => String.fromCharCode(65 + i)); // A à Z
 
   @override
   void initState() {
@@ -33,7 +34,7 @@ class _CocktailListScreenState extends State<CocktailListScreen> {
   void _onScroll() {
     final provider = Provider.of<CocktailProvider>(context, listen: false);
 
-    if (_scrollController.position.pixels ==
+    if (_scrollController.position.pixels == 
             _scrollController.position.maxScrollExtent &&
         !provider.isLoading) {
       final nextLetter = String.fromCharCode(_currentLetter.codeUnitAt(0) + 1);
@@ -60,66 +61,110 @@ class _CocktailListScreenState extends State<CocktailListScreen> {
           ),
         ],
       ),
-      body: Column(
+      body: Row(
         children: [
-          // SearchBar
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: TextField(
-              decoration: InputDecoration(
-                labelText: 'Search Cocktails',
-                border: OutlineInputBorder(),
-                suffixIcon: Icon(Icons.search),
-              ),
-              onSubmitted: (value) {
-                provider.searchCocktails(value);
-              },
+          // Liste des cocktails à gauche
+          Expanded(
+            child: Column(
+              children: [
+                // Barre de recherche
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: TextField(
+                    decoration: InputDecoration(
+                      labelText: 'Search Cocktails',
+                      border: OutlineInputBorder(),
+                      suffixIcon: Icon(Icons.search),
+                    ),
+                    onSubmitted: (value) {
+                      provider.searchCocktails(value);
+                    },
+                  ),
+                ),
+                // Liste des cocktails avec sections
+                Expanded(
+                  child: ListView.builder(
+                    controller: _scrollController,
+                    itemCount: provider.sectionedCocktails.length + 1,
+                    itemBuilder: (context, index) {
+                      if (index == provider.sectionedCocktails.length) {
+                        return provider.isLoading
+                            ? Center(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: CircularProgressIndicator(),
+                                ),
+                              )
+                            : SizedBox.shrink(); // Rien à afficher
+                      }
+
+                      final section = provider.sectionedCocktails[index];
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // En-tête de section (lettre)
+                          Padding(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 16.0, vertical: 8.0),
+                            child: Text(
+                              section['letter'],
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          // Liste des cocktails dans la section
+                          ...section['cocktails']
+                              .map<Widget>((cocktail) => CocktailCard(
+                                    cocktail: cocktail,
+                                    onTap: () {
+                                      provider.getCocktailDetails(cocktail.idDrink);
+                                      Navigator.pushNamed(context, '/details');
+                                    },
+                                  ))
+                              .toList(),
+                        ],
+                      );
+                    },
+                  ),
+                ),
+              ],
             ),
           ),
-          // Liste des cocktails avec sections
-          Expanded(
+          // Liste alphabétique à droite
+          Container(
+            width: 50,
+            color: Colors.grey[200],
             child: ListView.builder(
-              controller: _scrollController,
-              itemCount: provider.sectionedCocktails.length + 1,
+              itemCount: _alphabet.length,
               itemBuilder: (context, index) {
-                if (index == provider.sectionedCocktails.length) {
-                  return provider.isLoading
-                      ? Center(
-                          child: Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: CircularProgressIndicator(),
-                          ),
-                        )
-                      : SizedBox.shrink(); // Rien à afficher
-                }
-
-                final section = provider.sectionedCocktails[index];
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // En-tête de section (lettre)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16.0, vertical: 8.0),
+                final letter = _alphabet[index];
+                return GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      _currentLetter = letter;
+                    });
+                    _fetchCocktails();
+                  },
+                  child: Container(
+                    padding: EdgeInsets.all(8.0),
+                    color: _currentLetter == letter
+                        ? Colors.blue[200]
+                        : Colors.transparent,
+                    child: Center(
                       child: Text(
-                        section['letter'],
+                        letter,
                         style: TextStyle(
-                          fontSize: 18,
+                          fontSize: 16,
                           fontWeight: FontWeight.bold,
+                          color: _currentLetter == letter
+                              ? Colors.white
+                              : Colors.black,
                         ),
                       ),
                     ),
-                    // Liste des cocktails dans la section
-                    ...section['cocktails']
-                        .map<Widget>((cocktail) => CocktailCard(
-                              cocktail: cocktail,
-                              onTap: () {
-                                provider.getCocktailDetails(cocktail.idDrink);
-                                Navigator.pushNamed(context, '/details');
-                              },
-                            ))
-                        .toList(),
-                  ],
+                  ),
                 );
               },
             ),
