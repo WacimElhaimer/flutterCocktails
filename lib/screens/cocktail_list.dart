@@ -53,14 +53,43 @@ class _CocktailListScreenState extends State<CocktailListScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Cocktails'),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.favorite),
-            onPressed: () => Navigator.pushNamed(context, '/favorites'),
-          ),
-        ],
-      ),
+  title: Text('Cocktails'),
+  actions: [
+    Consumer<CocktailProvider>(
+      builder: (context, provider, child) {
+        return Stack(
+          children: [
+            IconButton(
+              icon: Icon(Icons.favorite),
+              onPressed: () => Navigator.pushNamed(context, '/favorites'),
+            ),
+            if (provider.favorites.isNotEmpty)
+              Positioned(
+                right: 8,
+                top: 8,
+                child: Container(
+                  padding: EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: Colors.red,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Text(
+                    provider.favorites.length.toString(),
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
+    ),
+  ],
+),
+
       body: Row(
         children: [
           // Liste des cocktails à gauche
