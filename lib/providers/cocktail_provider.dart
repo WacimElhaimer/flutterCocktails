@@ -22,18 +22,52 @@ class CocktailProvider with ChangeNotifier {
   bool get isLoading => _isLoading;
   String get errorMessage => _errorMessage;
 
-  /// Recherche des cocktails par nom
-  Future<void> searchCocktails(String name) async {
-    _isLoading = true;
-    _errorMessage = '';
-    notifyListeners();
+  // Ajouter une variable pour le mode recherche
+  bool _isSearchMode = false;
+  
+  Future<void> searchCocktails(String query) async {
+    if (query.isEmpty) {
+      _isSearchMode = false;
+      // Retour à l'affichage par lettre
+      fetchCocktailsByLetter(_currentLetter);
+      return;
+    }
 
+    _isSearchMode = true;
+    setLoading(true);
+    
     try {
-      _cocktails = await _apiService.searchCocktailsByName(name);
+      final results = await _apiService.searchCocktailsByName(query);
+      
+      // Réinitialiser les sections pour afficher uniquement les résultats de recherche
+      _sectionedCocktails = [];
+      Map<String, List<Cocktail>> groupedCocktails = {};
+      
+      // Organise les résultats de recherche par leur première lettre
+      for (var cocktail in results) {
+        String firstLetter = cocktail.strDrink[0].toUpperCase();
+        if (!groupedCocktails.containsKey(firstLetter)) {
+          groupedCocktails[firstLetter] = [];
+        }
+        groupedCocktails[firstLetter]!.add(cocktail);
+      }
+      
+      // Convertir en format sectionné
+      groupedCocktails.forEach((letter, cocktails) {
+        _sectionedCocktails.add({
+          'letter': letter,
+          'cocktails': cocktails,
+        });
+      });
+      
+      // Trier les sections par lettre
+      _sectionedCocktails.sort((a, b) => 
+        (a['letter'] as String).compareTo(b['letter'] as String));
+      
     } catch (e) {
-      _errorMessage = 'Failed to fetch cocktails: $e';
+      print('Error searching cocktails: $e');
     } finally {
-      _isLoading = false;
+      setLoading(false);
       notifyListeners();
     }
   }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/cocktail_provider.dart';
 import '../widgets/cocktail_card.dart';
+import 'dart:async';
 
 class CocktailListScreen extends StatefulWidget {
   @override
@@ -12,6 +13,7 @@ class _CocktailListScreenState extends State<CocktailListScreen> {
   final ScrollController _scrollController = ScrollController();
   String _currentLetter = 'A'; // Commence par la lettre A
   final List<String> _alphabet = List.generate(26, (i) => String.fromCharCode(65 + i)); // A à Z
+  Timer? _searchDebouncer;
 
   @override
   void initState() {
@@ -22,6 +24,7 @@ class _CocktailListScreenState extends State<CocktailListScreen> {
 
   @override
   void dispose() {
+    _searchDebouncer?.cancel();
     _scrollController.dispose();
     super.dispose();
   }
@@ -103,10 +106,15 @@ class _CocktailListScreenState extends State<CocktailListScreen> {
                     decoration: const InputDecoration(
                       labelText: 'Search Cocktails',
                       border: OutlineInputBorder(),
-                      suffixIcon: Icon(Icons.search),
+                      prefixIcon: Icon(Icons.search),
+                      suffixIcon: Icon(Icons.clear),
                     ),
-                    onSubmitted: (value) {
-                      provider.searchCocktails(value);
+                    onChanged: (value) {
+                      // Débouncer la recherche pour éviter trop d'appels API
+                      if (_searchDebouncer?.isActive ?? false) _searchDebouncer!.cancel();
+                      _searchDebouncer = Timer(const Duration(milliseconds: 500), () {
+                        provider.searchCocktails(value);
+                      });
                     },
                   ),
                 ),
@@ -146,8 +154,13 @@ class _CocktailListScreenState extends State<CocktailListScreen> {
             .map<Widget>((cocktail) {
               return ListTile(
                 leading: cocktail.strDrinkThumb != null
-                    ? CircleAvatar(
-                        backgroundImage: NetworkImage(cocktail.strDrinkThumb!),
+                    ? Hero(
+                        tag: 'cocktail-${cocktail.idDrink}',
+                        child: Image.network(
+                          cocktail.strDrinkThumb ?? '',
+                          height: 200,
+                          fit: BoxFit.cover,
+                        ),
                       )
                     : const CircleAvatar(
                         child: Icon(Icons.local_drink),
@@ -169,8 +182,13 @@ class _CocktailListScreenState extends State<CocktailListScreen> {
                   },
                 ),
                 onTap: () {
-                  provider.getCocktailDetails(cocktail.idDrink);
-                  Navigator.pushNamed(context, '/details');
+                  provider.getCocktailDetails(cocktail.idDrink).then((_) {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => CocktailDetailScreen(),
+                      ),
+                    );
+                  });
                 },
               );
             })

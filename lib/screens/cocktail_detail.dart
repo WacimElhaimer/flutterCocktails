@@ -41,10 +41,13 @@ class CocktailDetailScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Center(
-              child: Image.network(
-                cocktail.strDrinkThumb ?? '',
-                height: 200,
-                fit: BoxFit.cover,
+              child: Hero(
+                tag: 'cocktail-${cocktail.idDrink}',
+                child: Image.network(
+                  cocktail.strDrinkThumb ?? '',
+                  height: 200,
+                  fit: BoxFit.cover,
+                ),
               ),
             ),
             const SizedBox(height: 16),
