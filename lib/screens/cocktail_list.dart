@@ -53,14 +53,14 @@ class _CocktailListScreenState extends State<CocktailListScreen> {
 
     return Scaffold(
       appBar: AppBar(
-  title: Text('Cocktails'),
+   title: const Text('Cocktails'),
   actions: [
     Consumer<CocktailProvider>(
       builder: (context, provider, child) {
         return Stack(
           children: [
             IconButton(
-              icon: Icon(Icons.favorite),
+              icon: const Icon(Icons.favorite),
               onPressed: () => Navigator.pushNamed(context, '/favorites'),
             ),
             if (provider.favorites.isNotEmpty)
@@ -68,14 +68,14 @@ class _CocktailListScreenState extends State<CocktailListScreen> {
                 right: 8,
                 top: 8,
                 child: Container(
-                  padding: EdgeInsets.all(4),
-                  decoration: BoxDecoration(
+                  padding: const EdgeInsets.all(4),
+                  decoration: const BoxDecoration(
                     color: Colors.red,
                     shape: BoxShape.circle,
                   ),
                   child: Text(
                     provider.favorites.length.toString(),
-                    style: TextStyle(
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
@@ -100,7 +100,7 @@ class _CocktailListScreenState extends State<CocktailListScreen> {
                 Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: TextField(
-                    decoration: InputDecoration(
+                    decoration: const InputDecoration(
                       labelText: 'Search Cocktails',
                       border: OutlineInputBorder(),
                       suffixIcon: Icon(Icons.search),
@@ -112,51 +112,74 @@ class _CocktailListScreenState extends State<CocktailListScreen> {
                 ),
                 // Liste des cocktails avec sections
                 Expanded(
-                  child: ListView.builder(
-                    controller: _scrollController,
-                    itemCount: provider.sectionedCocktails.length + 1,
-                    itemBuilder: (context, index) {
-                      if (index == provider.sectionedCocktails.length) {
-                        return provider.isLoading
-                            ? Center(
-                                child: Padding(
-                                  padding: const EdgeInsets.all(8.0),
-                                  child: CircularProgressIndicator(),
-                                ),
-                              )
-                            : SizedBox.shrink(); // Rien à afficher
-                      }
+                  child:ListView.builder(
+  controller: _scrollController,
+  itemCount: provider.sectionedCocktails.length + 1,
+  itemBuilder: (context, index) {
+    if (index == provider.sectionedCocktails.length) {
+      return provider.isLoading
+          ? const Center(
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: CircularProgressIndicator(),
+              ),
+            )
+          : const SizedBox.shrink(); // Rien à afficher
+    }
 
-                      final section = provider.sectionedCocktails[index];
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // En-tête de section (lettre)
-                          Padding(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 16.0, vertical: 8.0),
-                            child: Text(
-                              section['letter'],
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                          // Liste des cocktails dans la section
-                          ...section['cocktails']
-                              .map<Widget>((cocktail) => CocktailCard(
-                                    cocktail: cocktail,
-                                    onTap: () {
-                                      provider.getCocktailDetails(cocktail.idDrink);
-                                      Navigator.pushNamed(context, '/details');
-                                    },
-                                  ))
-                              .toList(),
-                        ],
-                      );
-                    },
+    final section = provider.sectionedCocktails[index];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+          child: Text(
+            section['letter'],
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+        // Liste des cocktails dans la section
+        ...section['cocktails']
+            .map<Widget>((cocktail) {
+              return ListTile(
+                leading: cocktail.strDrinkThumb != null
+                    ? CircleAvatar(
+                        backgroundImage: NetworkImage(cocktail.strDrinkThumb!),
+                      )
+                    : const CircleAvatar(
+                        child: Icon(Icons.local_drink),
+                      ),
+                title: Text(cocktail.strDrink),
+                subtitle: Text(cocktail.strCategory ?? ''),
+                trailing: IconButton(
+                  icon: Icon(
+                    provider.isFavorite(cocktail)
+                        ? Icons.favorite
+                        : Icons.favorite_border,
                   ),
+                  onPressed: () {
+                    if (provider.isFavorite(cocktail)) {
+                      provider.removeFromFavorites(cocktail);
+                    } else {
+                      provider.addToFavorites(cocktail);
+                    }
+                  },
+                ),
+                onTap: () {
+                  provider.getCocktailDetails(cocktail.idDrink);
+                  Navigator.pushNamed(context, '/details');
+                },
+              );
+            })
+            .toList(),
+      ],
+    );
+  },
+)
+
                 ),
               ],
             ),
@@ -177,7 +200,7 @@ class _CocktailListScreenState extends State<CocktailListScreen> {
                     _fetchCocktails();
                   },
                   child: Container(
-                    padding: EdgeInsets.all(8.0),
+                    padding: const EdgeInsets.all(8.0),
                     color: _currentLetter == letter
                         ? Colors.blue[200]
                         : Colors.transparent,

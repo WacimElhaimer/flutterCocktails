@@ -10,8 +10,8 @@ class CocktailDetailScreen extends StatelessWidget {
 
     if (cocktail == null) {
       return Scaffold(
-        appBar: AppBar(title: Text('Cocktail Details')),
-        body: Center(child: Text('No details available')),
+        appBar: AppBar(title: const Text('Cocktail Details')),
+        body: const Center(child: Text('No details available')),
       );
     }
 
@@ -47,29 +47,29 @@ class CocktailDetailScreen extends StatelessWidget {
                 fit: BoxFit.cover,
               ),
             ),
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
             Text(
               'Category: ${cocktail.strCategory ?? 'N/A'}',
-              style: TextStyle(fontSize: 16),
+              style: const TextStyle(fontSize: 16),
             ),
-            SizedBox(height: 8),
+            const SizedBox(height: 8),
             Text(
               'Alcoholic: ${cocktail.strAlcoholic ?? 'N/A'}',
-              style: TextStyle(fontSize: 16),
+              style: const TextStyle(fontSize: 16),
             ),
-            SizedBox(height: 16),
-            Text(
+            const SizedBox(height: 16),
+            const Text(
               'Instructions:',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
-            SizedBox(height: 8),
+            const SizedBox(height: 8),
             Text(cocktail.strInstructions ?? 'No instructions available'),
-            SizedBox(height: 16),
-            Text(
+            const SizedBox(height: 16),
+            const Text(
               'Ingredients:',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
-            SizedBox(height: 8),
+            const SizedBox(height: 8),
             ...cocktail.ingredients.asMap().entries.map((entry) {
               final index = entry.key;
               final ingredient = entry.value;
