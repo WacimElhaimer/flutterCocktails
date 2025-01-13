@@ -4,6 +4,7 @@ import '../services/api_service.dart';
 
 class CocktailProvider with ChangeNotifier {
   final ApiService _apiService = ApiService();
+  String _currentLetter = 'A';
 
   List<Cocktail> _cocktails = [];
   List<Cocktail> _favorites = [];
@@ -34,7 +35,7 @@ class CocktailProvider with ChangeNotifier {
     }
 
     _isSearchMode = true;
-    setLoading(true);
+    _isLoading = true;
     
     try {
       final results = await _apiService.searchCocktailsByName(query);
@@ -67,7 +68,7 @@ class CocktailProvider with ChangeNotifier {
     } catch (e) {
       print('Error searching cocktails: $e');
     } finally {
-      setLoading(false);
+      _isLoading = false;
       notifyListeners();
     }
   }
